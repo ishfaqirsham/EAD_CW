@@ -208,7 +208,7 @@ private void updateRoomStatus() {
     public static void main(String args[]) {
 
         /* Create and display the form */
-        //java.awt.EventQueue.invokeLater(() -> new RoomForm("admin").setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> new RoomForm("admin").setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
