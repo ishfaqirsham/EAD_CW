@@ -78,6 +78,17 @@ public class ReservationDAO {
         ps.setInt(1, reservationId);
         return ps.executeUpdate() > 0;
     }
+    
+    // Marks a reservation as Completed - used when the guest's stay
+    // is finished and they've checked out normally (different from
+    // Cancelled, which means the booking never actually happened).
+    public boolean complete(int reservationId) throws SQLException {
+       Connection con = com.hotel.util.DBConnection.getConnection();
+       PreparedStatement ps = con.prepareStatement(
+          "UPDATE reservation SET status='Completed' WHERE reservation_id=?");
+       ps.setInt(1, reservationId);
+       return ps.executeUpdate() > 0;
+}
 
     // Finds which room a reservation used (needed when cancelling,
     // so we know which room to set back to Available).

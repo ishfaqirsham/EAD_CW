@@ -215,11 +215,13 @@ private void reserveRoom() {
         double total = reservationController.createReservation(customerId, roomId, checkIn, checkOut);
 
         javax.swing.JOptionPane.showMessageDialog(this, "Reservation created. Total: Rs. " + total);
+        
+        // Show the final total on screen (don't reset it to zero anymore)
+        lblTotal.setText("Rs. " + total);
 
         // Reset the form and refresh the screen's data
         txtCheckIn.setText("");
         txtCheckOut.setText("");
-        lblTotal.setText("Rs. 0.00");
         loadAvailableRoomsIntoDropdown(); // the just-booked room disappears from this list
         loadAllReservations();            // the new reservation appears in the table
 
@@ -277,6 +279,43 @@ private void cancelReservation() {
 }
 
 
+// Marks the selected reservation as Completed (guest stayed and
+// checked out normally) and frees the room back to Available.
+private void completeReservation() {
+
+    int row = table.getSelectedRow();
+    if (row == -1) {
+        javax.swing.JOptionPane.showMessageDialog(this, "Select a reservation from the table first.");
+        return;
+    }
+
+    int reservationId = (int) table.getValueAt(row, 0);
+    String currentStatus = (String) table.getValueAt(row, 6);
+
+    // Only an Active reservation makes sense to "complete" -
+    // can't complete something already Cancelled or already Completed
+    if (!"Active".equals(currentStatus)) {
+        javax.swing.JOptionPane.showMessageDialog(this, "Only an Active reservation can be marked as completed.");
+        return;
+    }
+
+    int confirm = javax.swing.JOptionPane.showConfirmDialog(this,
+            "Mark this reservation as completed? The room will become available again.",
+            "Confirm", javax.swing.JOptionPane.YES_NO_OPTION);
+    if (confirm != javax.swing.JOptionPane.YES_OPTION) return;
+
+    String error = reservationController.completeReservation(reservationId);
+
+    if (error == null) {
+        javax.swing.JOptionPane.showMessageDialog(this, "Reservation marked as completed.");
+        loadAvailableRoomsIntoDropdown(); // the freed room reappears in this list
+        loadAllReservations();
+    } else {
+        javax.swing.JOptionPane.showMessageDialog(this, error);
+    }
+}
+
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -300,6 +339,7 @@ private void cancelReservation() {
         table = new javax.swing.JTable();
         btnCancel = new javax.swing.JButton();
         btnRefresh = new javax.swing.JButton();
+        btnComplete = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Reservation Management - Grand Palm Hotel");
@@ -351,7 +391,7 @@ private void cancelReservation() {
         lblTotal.setFont(new java.awt.Font("Segoe UI Historic", 1, 17)); // NOI18N
         lblTotal.setForeground(new java.awt.Color(46, 125, 82));
         lblTotal.setText("Rs. 0.00");
-        jPanel1.add(lblTotal, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 170, 70, 50));
+        jPanel1.add(lblTotal, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 170, 190, 50));
 
         btnReserve.setBackground(new java.awt.Color(46, 125, 82));
         btnReserve.setForeground(new java.awt.Color(255, 255, 255));
@@ -385,7 +425,13 @@ private void cancelReservation() {
         btnRefresh.setBackground(new java.awt.Color(227, 224, 218));
         btnRefresh.setText("Refresh ");
         btnRefresh.addActionListener(this::btnRefreshActionPerformed);
-        getContentPane().add(btnRefresh, new org.netbeans.lib.awtextra.AbsoluteConstraints(210, 530, -1, -1));
+        getContentPane().add(btnRefresh, new org.netbeans.lib.awtextra.AbsoluteConstraints(390, 530, -1, -1));
+
+        btnComplete.setBackground(new java.awt.Color(46, 125, 82));
+        btnComplete.setForeground(new java.awt.Color(255, 255, 255));
+        btnComplete.setText("Complete Reservation");
+        btnComplete.addActionListener(this::btnCompleteActionPerformed);
+        getContentPane().add(btnComplete, new org.netbeans.lib.awtextra.AbsoluteConstraints(210, 530, 160, -1));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -405,6 +451,10 @@ private void cancelReservation() {
     loadAvailableRoomsIntoDropdown();
     loadAllReservations();
     }//GEN-LAST:event_btnRefreshActionPerformed
+
+    private void btnCompleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCompleteActionPerformed
+            completeReservation();
+    }//GEN-LAST:event_btnCompleteActionPerformed
 
     /**
      * @param args the command line arguments
@@ -433,6 +483,7 @@ private void cancelReservation() {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnCancel;
+    private javax.swing.JButton btnComplete;
     private javax.swing.JButton btnRefresh;
     private javax.swing.JButton btnReserve;
     private javax.swing.JComboBox<String> cmbCustomer;

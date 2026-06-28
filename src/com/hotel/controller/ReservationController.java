@@ -71,6 +71,23 @@ public class ReservationController {
             return "Database error: " + e.getMessage();
         }
     }
+    
+         // Marks a reservation Completed (guest checked out normally) and
+         // frees up the room, same as cancelling, but a different final status.
+         public String completeReservation(int reservationId) {
+           try {
+               int roomId = reservationDAO.findRoomIdByReservationId(reservationId);
+               boolean success = reservationDAO.complete(reservationId);
+
+             if (success && roomId != -1) {
+                    reservationDAO.updateRoomStatus(roomId, "Available");
+                }
+                 return success ? null : "Failed to complete reservation.";
+
+            } catch (SQLException e) {
+                 return "Database error: " + e.getMessage();
+            }
+}
 
     public List<Reservation> getAllReservations() {
         try {

@@ -18,7 +18,7 @@ public class RoomForm extends javax.swing.JFrame {
    // The Controller checks the data is valid first, then calls RoomDAO
     private com.hotel.controller.RoomController roomController = new com.hotel.controller.RoomController();
     
-    public RoomForm( String Role) {
+    public RoomForm( String role) {
         this.role = role;
         initComponents();
          loadAllRooms();  // fills the table when screen opens
