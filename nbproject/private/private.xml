@@ -6,9 +6,11 @@
             <file>file:/C:/netbeansproject/HotelReservationSystem/src/com/hotel/ui/CustomerForm.java</file>
             <file>file:/C:/netbeansproject/HotelReservationSystem/src/com/hotel/ui/LoginForm.java</file>
             <file>file:/C:/netbeansproject/HotelReservationSystem/src/com/hotel/ui/DashboardForm.java</file>
-            <file>file:/C:/netbeansproject/HotelReservationSystem/src/com/hotel/ui/RoomForm.java</file>
             <file>file:/C:/netbeansproject/HotelReservationSystem/src/com/hotel/ui/PaymentForm.java</file>
             <file>file:/C:/netbeansproject/HotelReservationSystem/src/com/hotel/ui/ReservationForm.java</file>
+            <file>file:/C:/netbeansproject/HotelReservationSystem/src/com/hotel/ui/RoomForm.java</file>
+            <file>file:/C:/netbeansproject/HotelReservationSystem/src/com/hotel/dao/ReservationDAO.java</file>
+            <file>file:/C:/netbeansproject/HotelReservationSystem/src/com/hotel/controller/ReservationController.java</file>
         </group>
     </open-files>
 </project-private>
