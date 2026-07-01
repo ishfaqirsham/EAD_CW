@@ -4,10 +4,7 @@
  */
 package com.hotel.ui;
 
-/**
- *
- * @author sheha
- */
+
 public class ReportForm extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(ReportForm.class.getName());
@@ -57,6 +54,7 @@ public class ReportForm extends javax.swing.JFrame {
 
         btnGenerateReport.setBackground(new java.awt.Color(201, 165, 92));
         btnGenerateReport.setText("View Report");
+        btnGenerateReport.addActionListener(this::btnGenerateReportActionPerformed);
         jPanel1.add(btnGenerateReport, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 30, 140, 40));
 
         jButton2.setBackground(new java.awt.Color(227, 224, 218));
@@ -67,6 +65,53 @@ public class ReportForm extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    // This method is called when the admin clicks "Generate Jasper Report".
+// It connects to the database, fills the report with live data from
+// the reservation_report_view we created in hotel_db.sql, then opens
+// it in JasperReports' built-in print-preview viewer window.
+private void generateReport() {
+    try {
+        // Step 1: Get the shared database connection (our Singleton)
+        java.sql.Connection con = com.hotel.util.DBConnection.getConnection();
+
+        // Step 2: Point to the compiled .jasper file.
+        // This path assumes you saved the report file inside a "reports"
+        // folder at the root of your project. Adjust if yours is elsewhere.
+        String reportPath = "reports/ReservationSummaryReport.jasper";
+
+        // Step 3: Fill the report with data from the database.
+        // The report uses this SQL query (same as reservation_report_view):
+        //   SELECT res.reservation_id, c.full_name AS customer_name,
+        //          cat.category_name AS room_type,
+        //          DATEDIFF(res.check_out_date, res.check_in_date) AS days_stayed,
+        //          res.total_amount, res.status
+        //   FROM reservation res
+        //   JOIN customer c ON res.customer_id = c.customer_id
+        //   JOIN room r ON res.room_id = r.room_id
+        //   JOIN room_category cat ON r.category_id = cat.category_id
+        //   ORDER BY res.reservation_id
+        net.sf.jasperreports.engine.JasperPrint jasperPrint =
+            net.sf.jasperreports.engine.JasperFillManager.fillReport(
+                reportPath,
+                new java.util.HashMap<>(), // no extra parameters needed
+                con);
+
+        // Step 4: Open the report in JasperReports' built-in viewer.
+        // The viewer lets the admin see, print, or export to PDF.
+        net.sf.jasperreports.view.JasperViewer.viewReport(jasperPrint, false);
+
+    } catch (Exception e) {
+        javax.swing.JOptionPane.showMessageDialog(this,
+            "Could not generate report: " + e.getMessage(),
+            "Report Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+    }
+}
+    
+    
+    private void btnGenerateReportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenerateReportActionPerformed
+         generateReport();
+    }//GEN-LAST:event_btnGenerateReportActionPerformed
 
     /**
      * @param args the command line arguments
@@ -90,7 +135,7 @@ public class ReportForm extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new ReportForm().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> new ReportForm("admin").setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
