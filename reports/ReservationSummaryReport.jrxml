@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+              http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="ReservationSummaryReport"
+              pageWidth="842"
+              pageHeight="595"
+              orientation="Landscape"
+              columnWidth="782"
+              leftMargin="30"
+              rightMargin="30"
+              topMargin="20"
+              bottomMargin="20">
+
+    <!-- ============================================================
+         QUERY - joins 4 tables: reservation + customer + room +
+         room_category. This satisfies the coursework requirement
+         of "report using data from more than two tables."
+         ============================================================ -->
+    <queryString>
+        <![CDATA[
+            SELECT
+                res.reservation_id,
+                c.full_name        AS customer_name,
+                cat.category_name  AS room_type,
+                rm.room_number,
+                res.check_in_date,
+                res.check_out_date,
+                DATEDIFF(res.check_out_date, res.check_in_date) AS days_stayed,
+                res.total_amount,
+                res.status
+            FROM reservation res
+            JOIN customer c       ON res.customer_id = c.customer_id
+            JOIN room rm          ON res.room_id = rm.room_id
+            JOIN room_category cat ON rm.category_id = cat.category_id
+            ORDER BY res.reservation_id
+        ]]>
+    </queryString>
+
+    <!-- Field declarations - one per column returned by the query -->
+    <field name="reservation_id"  class="java.lang.Integer"/>
+    <field name="customer_name"   class="java.lang.String"/>
+    <field name="room_type"       class="java.lang.String"/>
+    <field name="room_number"     class="java.lang.String"/>
+    <field name="check_in_date"   class="java.sql.Date"/>
+    <field name="check_out_date"  class="java.sql.Date"/>
+    <field name="days_stayed"     class="java.lang.Long"/>
+    <field name="total_amount"    class="java.math.BigDecimal"/>
+    <field name="status"          class="java.lang.String"/>
+
+    <!-- Variable: running total of revenue from Active/Completed rows -->
+    <variable name="totalRevenue"
+              class="java.math.BigDecimal"
+              calculation="Sum">
+        <variableExpression><![CDATA[$F{total_amount}]]></variableExpression>
+        <initialValueExpression><![CDATA[new java.math.BigDecimal(0)]]></initialValueExpression>
+    </variable>
+
+    <!-- ==================== TITLE BAND ==================== -->
+    <title>
+        <band height="60">
+            <!-- Hotel name -->
+            <staticText>
+                <reportElement x="0" y="0" width="782" height="30"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font fontName="SansSerif" size="18" isBold="true"/>
+                </textElement>
+                <text><![CDATA[GRAND PALM HOTEL]]></text>
+            </staticText>
+            <!-- Report subtitle -->
+            <staticText>
+                <reportElement x="0" y="30" width="782" height="20"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font fontName="SansSerif" size="12" isItalic="true"/>
+                </textElement>
+                <text><![CDATA[Reservation Summary Report]]></text>
+            </staticText>
+        </band>
+    </title>
+
+    <!-- ==================== PAGE HEADER ==================== -->
+    <pageHeader>
+        <band height="20">
+            <!-- Thin navy line under the title -->
+            <line>
+                <reportElement x="0" y="18" width="782" height="1"
+                               forecolor="#2C3E50"/>
+            </line>
+        </band>
+    </pageHeader>
+
+    <!-- ==================== COLUMN HEADER ==================== -->
+    <columnHeader>
+        <band height="25">
+            <!-- Navy background rectangle -->
+            <rectangle>
+                <reportElement x="0" y="0" width="782" height="25"
+                               backcolor="#2C3E50" forecolor="#2C3E50"/>
+                <graphicElement>
+                    <pen lineWidth="0"/>
+                </graphicElement>
+            </rectangle>
+            <!-- Column header labels in white text -->
+            <staticText>
+                <reportElement x="5"   y="5" width="60"  height="15" forecolor="#FFFFFF"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Res. ID]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="65"  y="5" width="160" height="15" forecolor="#FFFFFF"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Customer Name]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="225" y="5" width="80"  height="15" forecolor="#FFFFFF"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Room Type]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="305" y="5" width="70"  height="15" forecolor="#FFFFFF"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Room No.]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="375" y="5" width="85"  height="15" forecolor="#FFFFFF"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Check-In]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="460" y="5" width="85"  height="15" forecolor="#FFFFFF"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Check-Out]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="545" y="5" width="55"  height="15" forecolor="#FFFFFF"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Days]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="600" y="5" width="90"  height="15" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Right"><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Total (Rs.)]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="695" y="5" width="82"  height="15" forecolor="#FFFFFF"/>
+                <textElement><font fontName="SansSerif" size="9" isBold="true"/></textElement>
+                <text><![CDATA[Status]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+
+    <!-- ==================== DETAIL BAND (one row per reservation) ==================== -->
+    <detail>
+        <band height="22">
+            <!-- Alternating light background for readability -->
+            <rectangle>
+                <reportElement x="0" y="0" width="782" height="22"
+                               backcolor="#F7F5F2" forecolor="#F7F5F2"
+                               style="odd"/>
+                <graphicElement><pen lineWidth="0"/></graphicElement>
+            </rectangle>
+            <!-- Data fields -->
+            <textField>
+                <reportElement x="5"   y="4" width="60"  height="14"/>
+                <textElement><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$F{reservation_id}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="65"  y="4" width="160" height="14"/>
+                <textElement><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$F{customer_name}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="225" y="4" width="80"  height="14"/>
+                <textElement><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$F{room_type}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="305" y="4" width="70"  height="14"/>
+                <textElement><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$F{room_number}]]></textFieldExpression>
+            </textField>
+            <textField pattern="yyyy-MM-dd" isBlankWhenNull="true">
+                <reportElement x="375" y="4" width="85"  height="14"/>
+                <textElement><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$F{check_in_date}]]></textFieldExpression>
+            </textField>
+            <textField pattern="yyyy-MM-dd" isBlankWhenNull="true">
+                <reportElement x="460" y="4" width="85"  height="14"/>
+                <textElement><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$F{check_out_date}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="545" y="4" width="55"  height="14"/>
+                <textElement><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$F{days_stayed}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="600" y="4" width="90"  height="14"/>
+                <textElement textAlignment="Right"><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$F{total_amount}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="695" y="4" width="82"  height="14"/>
+                <textElement><font fontName="SansSerif" size="9"/></textElement>
+                <textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
+            </textField>
+            <!-- Light separator line between rows -->
+            <line>
+                <reportElement x="0" y="21" width="782" height="1"
+                               forecolor="#E3E0DA"/>
+            </line>
+        </band>
+    </detail>
+
+    <!-- ==================== SUMMARY BAND (Total Revenue) ==================== -->
+    <summary>
+        <band height="40">
+            <!-- Top border line -->
+            <line>
+                <reportElement x="0" y="4" width="782" height="1"
+                               forecolor="#2C3E50"/>
+            </line>
+            <!-- "Total Revenue:" label -->
+            <staticText>
+                <reportElement x="500" y="12" width="100" height="18"/>
+                <textElement textAlignment="Right">
+                    <font fontName="SansSerif" size="11" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Total Revenue:]]></text>
+            </staticText>
+            <!-- The actual SUM value -->
+            <textField isBlankWhenNull="true">
+                <reportElement x="605" y="12" width="172" height="18"/>
+                <textElement textAlignment="Right">
+                    <font fontName="SansSerif" size="11" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA["Rs. " + $V{totalRevenue}]]></textFieldExpression>
+            </textField>
+        </band>
+    </summary>
+
+</jasperReport>

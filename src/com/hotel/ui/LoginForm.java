@@ -81,7 +81,7 @@ public class LoginForm extends javax.swing.JFrame {
 
         lblMessage.setForeground(new java.awt.Color(192, 57, 43));
         lblMessage.setText(" ");
-        getContentPane().add(lblMessage, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 310, 310, -1));
+        getContentPane().add(lblMessage, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 270, 260, -1));
         getContentPane().add(txtPassword, new org.netbeans.lib.awtextra.AbsoluteConstraints(110, 230, 230, 30));
 
         pack();
