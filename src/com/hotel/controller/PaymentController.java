@@ -9,11 +9,11 @@ public class PaymentController {
 
     private PaymentDAO paymentDAO = new PaymentDAO();
 
-    // Validates the amount, looks up the customer, then saves the payment.
+    // Validates the amount, checks the customer, then saves the payment.
     // Returns an error message, or null if it succeeded.
     public String recordPayment(int reservationId, double amount) {
 
-        // Rule: payment amount must be greater than zero
+        // here the rule: payment amount must be greater than zero
         if (amount <= 0) {
             return "Payment amount must be greater than zero.";
         }
