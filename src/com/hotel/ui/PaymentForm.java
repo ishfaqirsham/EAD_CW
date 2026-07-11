@@ -19,6 +19,11 @@ public class PaymentForm extends javax.swing.JFrame {
 private com.hotel.controller.PaymentController paymentController =
     new com.hotel.controller.PaymentController();
 
+// Reused so a successful payment can trigger the same "mark Completed +
+// free the room" logic that the Reservation screen's Complete button uses.
+private com.hotel.controller.ReservationController reservationController =
+    new com.hotel.controller.ReservationController();
+
 
     public PaymentForm(String role) {
         initComponents();

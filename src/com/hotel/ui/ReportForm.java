@@ -9,24 +9,22 @@ public class ReportForm extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(ReportForm.class.getName());
 
-    /**
-     * Creates new form ReportForm
-     */
+    // Static initializer - runs ONCE when this class is first loaded,
+    // before any constructor or method runs. This sets up JasperReports
+    // context manually so it doesn't crash trying to scan the classpath.
+    static {
+        try {
+            System.setProperty(
+                "net.sf.jasperreports.extensions.registry.class",
+                "net.sf.jasperreports.extensions.ListExtensionsRegistry"
+            );
+        } catch (Exception e) {
+            System.out.println("JasperReports init note: " + e.getMessage());
+        }
+    }
     private String role; // "admin" only gets to see this screen
     public ReportForm(String role) {
         this.role = role;
-    // Compiles the .jrxml design file into a runnable .jasper file.
-    // This only needs to happen once - after the first run, the
-    // .jasper file already exists and this line can be removed.
-    try {
-        net.sf.jasperreports.engine.JasperCompileManager.compileReportToFile(
-            "reports/ReservationSummaryReport.jrxml",
-            "reports/ReservationSummaryReport.jasper");
-    } catch (Exception e) {
-        // If compilation fails (e.g. jar missing), just print a note
-        // so the app doesn't crash - the error will show in the Output panel
-        System.out.println("Report compile note: " + e.getMessage());
-    }
         initComponents();
     }
 
@@ -43,7 +41,6 @@ public class ReportForm extends javax.swing.JFrame {
         lblBannerTitle = new javax.swing.JLabel();
         jPanel1 = new javax.swing.JPanel();
         btnGenerateReport = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Reservation Summary Report - Grand Palm Hotel");
@@ -69,13 +66,9 @@ public class ReportForm extends javax.swing.JFrame {
         btnGenerateReport.setBackground(new java.awt.Color(201, 165, 92));
         btnGenerateReport.setText("View Report");
         btnGenerateReport.addActionListener(this::btnGenerateReportActionPerformed);
-        jPanel1.add(btnGenerateReport, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 30, 140, 40));
+        jPanel1.add(btnGenerateReport, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 60, 140, 40));
 
-        jButton2.setBackground(new java.awt.Color(227, 224, 218));
-        jButton2.setText("Refresh");
-        jPanel1.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 100, 80, 30));
-
-        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 100, 640, 170));
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 100, 690, 190));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -85,41 +78,135 @@ public class ReportForm extends javax.swing.JFrame {
 // the reservation_report_view we created in hotel_db.sql, then opens
 // it in JasperReports' built-in print-preview viewer window.
 private void generateReport() {
-    try {
-        // Step 1: Get the shared database connection (our Singleton)
-        java.sql.Connection con = com.hotel.util.DBConnection.getConnection();
+    
+    // Run everything on a background thread so the UI doesn't freeze
+    // while the database query and report compilation are happening.
+    new Thread(() -> {
 
-        // Step 2: Point to the compiled .jasper file.
-        // This path assumes you saved the report file inside a "reports"
-        // folder at the root of your project. Adjust if yours is elsewhere.
-        String reportPath = "reports/ReservationSummaryReport.jasper";
+        // Force JasperReports to use a simple extensions registry instead of
+        // scanning the whole classpath for extension config files.
+        // This avoids a crash (ExceptionInInitializerError) that happens in
+        // plain NetBeans Ant projects that don't use Maven/Spring.
+        System.setProperty(
+            "net.sf.jasperreports.extensions.registry.class",
+            "net.sf.jasperreports.extensions.ListExtensionsRegistry"
+        );
 
-        // Step 3: Fill the report with data from the database.
-        // The report uses this SQL query (same as reservation_report_view):
-        //   SELECT res.reservation_id, c.full_name AS customer_name,
-        //          cat.category_name AS room_type,
-        //          DATEDIFF(res.check_out_date, res.check_in_date) AS days_stayed,
-        //          res.total_amount, res.status
-        //   FROM reservation res
-        //   JOIN customer c ON res.customer_id = c.customer_id
-        //   JOIN room r ON res.room_id = r.room_id
-        //   JOIN room_category cat ON r.category_id = cat.category_id
-        //   ORDER BY res.reservation_id
-        net.sf.jasperreports.engine.JasperPrint jasperPrint =
-            net.sf.jasperreports.engine.JasperFillManager.fillReport(
-                reportPath,
-                new java.util.HashMap<>(), // no extra parameters needed
-                con);
+        try {
+            // Step 1: Get a connection to the hotel_db database using our
+            // existing DBConnection utility class.
+            java.sql.Connection con = com.hotel.util.DBConnection.getConnection();
 
-        // Step 4: Open the report in JasperReports' built-in viewer.
-        // The viewer lets the admin see, print, or export to PDF.
-        net.sf.jasperreports.view.JasperViewer.viewReport(jasperPrint, false);
+            // Step 2: Compile the .jrxml design file into a JasperReport object.
+            // We use our own compileReport() helper method (defined below)
+            // instead of a single hardcoded path, so it works whether we run
+            // from the IDE or from a packaged JAR file.
+            net.sf.jasperreports.engine.JasperReport jasperReport =
+                compileReport("ReservationSummaryReport.jrxml");
 
-    } catch (Exception e) {
-        javax.swing.JOptionPane.showMessageDialog(this,
-            "Could not generate report: " + e.getMessage(),
-            "Report Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            // Step 3: Fill the compiled report with real data by running its
+            // embedded SQL query against our database connection.
+            net.sf.jasperreports.engine.JasperPrint jasperPrint =
+                net.sf.jasperreports.engine.JasperFillManager
+                    .fillReport(jasperReport, new java.util.HashMap<>(), con);
+
+            // Step 4: Show the filled report in a JasperViewer window.
+            // This must run on the Swing Event Dispatch Thread (EDT),
+            // so we wrap it in invokeLater().
+            javax.swing.SwingUtilities.invokeLater(() -> {
+
+                // Create the report viewer window, passing our filled report.
+                net.sf.jasperreports.view.JasperViewer viewer =
+                    new net.sf.jasperreports.view.JasperViewer(jasperPrint, false);
+
+                // Set a custom window title instead of the default Jasper one.
+                viewer.setTitle("Reservation Summary Report - Grand Palm Hotel");
+
+                // Closing this window should only close the report viewer,
+                // not the whole application.
+                viewer.setDefaultCloseOperation(javax.swing.JFrame.DISPOSE_ON_CLOSE);
+
+                // Set a reasonable default window size.
+                viewer.setSize(1100, 700);
+
+                // Center the window on the screen.
+                viewer.setLocationRelativeTo(null);
+
+                // Make the window visible to the user.
+                viewer.setVisible(true);
+            });
+
+        } catch (Exception e) {
+
+            // Print the full error details to the NetBeans Output console
+            // so we can see exactly what went wrong (not just a short message).
+            e.printStackTrace();
+
+            // Also show a simple error popup to the user, on the EDT.
+            javax.swing.SwingUtilities.invokeLater(() ->
+                javax.swing.JOptionPane.showMessageDialog(
+                    null,
+                    "Report failed: " + e.getMessage(),
+                    "Report Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE)
+            );
+        }
+
+    }).start(); // Start the background thread we created above
+}
+
+// Helper method: finds and compiles the JRXML report file.
+// It first tries to load the file as a classpath resource (this works
+// both when running inside NetBeans AND when running the packaged JAR,
+// because the file lives inside src/com/hotel/report/ and gets copied
+// into the compiled classes folder automatically).
+// If that fails, it falls back to checking a couple of filesystem paths.
+private net.sf.jasperreports.engine.JasperReport compileReport(String jrxmlFile) throws Exception {
+
+    // Try to open the JRXML file as a resource on the classpath.
+    // The leading "/" means "start from the root of the classpath",
+    // which corresponds to the com/hotel/report/ package folder.
+    java.io.InputStream stream =
+        getClass().getResourceAsStream("/com/hotel/report/" + jrxmlFile);
+
+    // If the file was found on the classpath, compile it directly from the stream.
+    if (stream != null) {
+        System.out.println("[Report] Loaded from classpath: /com/hotel/report/" + jrxmlFile);
+        return net.sf.jasperreports.engine.JasperCompileManager.compileReport(stream);
     }
+
+    // If the classpath lookup failed, try a couple of filesystem locations
+    // as a fallback (useful when running directly inside the IDE).
+    java.io.File[] candidates = {
+        // Path if running from the project root in NetBeans.
+        new java.io.File(System.getProperty("user.dir"), "src/com/hotel/report/" + jrxmlFile),
+        // Old location, kept as a last-resort fallback.
+        new java.io.File(System.getProperty("user.dir"), "reports/" + jrxmlFile)
+    };
+
+    // Loop through each candidate path and use the first one that exists.
+    for (java.io.File candidate : candidates) {
+
+        // Convert to an absolute, resolved path (handles any ".." in the path).
+        java.io.File resolved = candidate.getCanonicalFile();
+
+        // Log what we're trying, useful for debugging.
+        System.out.println("[Report] Trying: " + resolved.getAbsolutePath()
+                + " exists=" + resolved.exists());
+
+        // If this file actually exists on disk, compile it from there.
+        if (resolved.exists()) {
+            return net.sf.jasperreports.engine.JasperCompileManager
+                    .compileReport(resolved.getAbsolutePath());
+        }
+    }
+
+    // If none of the strategies found the file, throw a clear error
+    // explaining exactly what we were looking for.
+    throw new net.sf.jasperreports.engine.JRException(
+        "Cannot find report file: " + jrxmlFile +
+        " (tried classpath /com/hotel/report/ and the above folders)"
+    );
 }
     
     
@@ -154,7 +241,6 @@ private void generateReport() {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnGenerateReport;
-    private javax.swing.JButton jButton2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JLabel lblBannerTitle;
     private javax.swing.JPanel pnlBanner;
