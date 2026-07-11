@@ -25,6 +25,20 @@ public class ReportForm extends javax.swing.JFrame {
     private String role; // "admin" only gets to see this screen
     public ReportForm(String role) {
         this.role = role;
+
+    // compiles the .jrxml design file into a runnable .jasper file.
+    // this only needs to happen once - after the first run, the
+    // .jasper file already exists and this line can be removed.
+    try {
+        net.sf.jasperreports.engine.JasperCompileManager.compileReportToFile(
+            "reports/ReservationSummaryReport.jrxml",
+            "reports/ReservationSummaryReport.jasper");
+    } catch (Exception e) {
+        // If compilation fails (e.g. jar missing), just print a note
+        // so the app doesn't crash - the error will show in the Output panel
+        System.out.println("Report compile note: " + e.getMessage());
+    }
+
         initComponents();
     }
 
