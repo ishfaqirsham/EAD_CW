@@ -57,7 +57,7 @@ private void loadStats() {
         // Revenue - adds up total_amount, but ONLY for reservations
         // that are still 'Active'. A Cancelled reservation should not
         // count as money earned, so it's excluded with the WHERE clause.
-        rs = st.executeQuery("SELECT SUM(total_amount) AS revenue FROM reservation WHERE status = 'Active'");
+        rs = st.executeQuery("SELECT SUM(total_amount) AS revenue FROM reservation WHERE status = 'Completed'");
         if (rs.next()) {
             String revenue = rs.getString("revenue");
             // SUM() returns NULL (no rows) if there are zero Active

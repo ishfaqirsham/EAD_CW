@@ -16,6 +16,7 @@ FROM reservation res
 JOIN customer c ON res.customer_id = c.customer_id
 JOIN room rm ON res.room_id = rm.room_id
 JOIN room_category cat ON rm.category_id = cat.category_id
+WHERE res.status = 'Completed'
 ORDER BY res.reservation_id]]></query>
 	<field name="reservation_id" class="java.lang.Integer">
 		<property name="com.jaspersoft.studio.field.name" value="reservation_id"/>

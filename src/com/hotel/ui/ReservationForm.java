@@ -27,6 +27,12 @@ private com.hotel.controller.ReservationController reservationController =
 private static final java.text.SimpleDateFormat FORMAT =
     new java.text.SimpleDateFormat("yyyy-MM-dd");
 
+static {
+    // Reject impossible calendar dates (day 88, month 80, etc.)
+    // instead of silently rolling them into a different real date.
+    FORMAT.setLenient(false);
+}
+
 
     public ReservationForm(String role) {
         this.role = role;          // remember who's using this screen

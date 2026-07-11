@@ -34,6 +34,8 @@ private com.hotel.controller.ReservationController reservationController =
     // front-desk task, not a sensitive admin-only action.
     loadReservationsIntoDropdown();
     loadAllPayments();
+     cmbReservation.addActionListener(e -> showAmountDueForSelectedReservation());
+    
     }
 
 
@@ -133,6 +135,29 @@ private com.hotel.controller.ReservationController reservationController =
 // Fills the dropdown with all ACTIVE reservations as "id - customer - room",
 // e.g. "5 - Anusha Silva - Room D-202". Cancelled reservations are
 // excluded - you shouldn't be able to pay for a booking that's been cancelled.
+    // Auto-fills the Amount field with the reservation's total_amount
+// as soon as it's picked from the dropdown - so staff don't have
+// to go check the Reservation screen and risk typing it wrong.
+private void showAmountDueForSelectedReservation() {
+    Object selected = cmbReservation.getSelectedItem();
+    if (selected == null) return;
+
+    try {
+        int reservationId = Integer.parseInt(((String) selected).split(" - ")[0].trim());
+        java.sql.Connection con = com.hotel.util.DBConnection.getConnection();
+        java.sql.PreparedStatement ps = con.prepareStatement(
+            "SELECT total_amount FROM reservation WHERE reservation_id = ?");
+        ps.setInt(1, reservationId);
+        java.sql.ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            txtAmount.setText(String.valueOf(rs.getDouble("total_amount")));
+        }
+    } catch (Exception e) {
+        txtAmount.setText("");
+    }
+}
+    
+    
 private void loadReservationsIntoDropdown() {
     cmbReservation.removeAllItems();
     try {
@@ -220,8 +245,14 @@ private void recordPayment() {
         String error = paymentController.recordPayment(reservationId, amount);
 
         if (error == null) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Payment of Rs. " + amount + " recorded.");
+            // Payment succeeded -> mark the reservation Completed and free
+            // the room, reusing the exact same logic as the Reservation
+            // screen's "Complete Reservation" button.
+            reservationController.completeReservation(reservationId);
+
+            javax.swing.JOptionPane.showMessageDialog(this, "Payment of Rs. " + amount + " recorded. Reservation marked Completed.");
             txtAmount.setText(""); // clear the field for the next entry
+            loadReservationsIntoDropdown(); // the now-Completed reservation drops out of this list
             loadAllPayments();      // refresh the table to show the new row
         } else {
             javax.swing.JOptionPane.showMessageDialog(this, error);
